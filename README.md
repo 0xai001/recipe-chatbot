@@ -27,7 +27,7 @@ A recipe assistant with a deliberate persona and constraints, chosen to create r
 | Nut-free, allergy-aware | Safety-critical — zero tolerance |
 | One recipe per reply, fixed format | Instruction-following under pressure |
 
-Bot: Claude Sonnet via LiteLLM · Judge (from HW3): Claude Haiku
+Bot: Claude Sonnet · Judge (from HW3): Claude Haiku — both called through [LiteLLM](https://github.com/BerriAI/litellm), so models are swappable via config
 
 ---
 
