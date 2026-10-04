@@ -23,8 +23,7 @@ _PROMPT_PATH = Path(__file__).parent / "system_prompt.md"
 SYSTEM_PROMPT: Final[str] = _PROMPT_PATH.read_text().strip()
 
 # Fetch configuration *after* we loaded the .env file.
-MODEL_NAME: Final[str] = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-
+MODEL_NAME: Final[str] = os.environ["MODEL_NAME"]
 
 # --- Agent wrapper ---------------------------------------------------------------
 
