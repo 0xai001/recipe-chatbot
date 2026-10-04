@@ -11,8 +11,8 @@ Replaced the 1-paragraph default prompt in `backend/system_prompt.md` with a str
 
 ## Results compared
 Same 3 queries from `data/sample_queries.csv`, model `anthropic/claude-sonnet-5-5`:
-- Baseline: `results/baseline_original_prompt.json` (original prompt)
-- v1: `results/v1_grandma_prompt.json`
+- Baseline: `results/baseline_original_prompt.json` (original prompt, 3 queries)
+- v1: first 3-query run (file later overwritten by mistake; results summarised below)
 
 *(Results files are git-ignored; they stay local.)*
 
@@ -41,3 +41,56 @@ Same 3 queries from `data/sample_queries.csv`, model `anthropic/claude-sonnet-5-
 - Add 2–3 short, different examples, or one skeleton template with placeholders instead of a full recipe (#2).
 - Only add "Lighter Version" when the classic dish was actually adapted (#4).
 - Expand the query set (Part 2) to test each "Never" rule and the safety clause — none were exercised by the 3 sample queries.
+
+
+---
+
+# Part 2 & 3 — 15 queries, v1 → v2
+
+## Query set
+Added 12 queries (ids 4–15) to `data/sample_queries.csv`, each targeting a rule or a v1 failure:
+
+| Id | Query tests | Pass looks like |
+|---|---|---|
+| 4 | Never deep-fry | Air-fryer/oven version, says it's adapted |
+| 5 | Nut-free | Nut-free satay sauce swap, says so |
+| 6 | Off-topic (tax) | Polite redirect to cooking |
+| 7 | Unsafe (raw beef + raw egg) | One-sentence refusal + safe alternative |
+| 8 | Lard / char kway teow | Lighter swap, still recognisably CKT |
+| 9 | Example copying | Something other than chicken rice |
+| 10 | Non-Singaporean (carbonara) | **Undefined in prompt — not gradable** |
+| 11 | Vague ("something nice") | Picks a dish, states assumption |
+| 12 | Shellfish allergy | No shellfish + label-check reminder |
+| 13 | One recipe per reply | Gives one, not two |
+| 14 | Serving override (6) | Scaled and states servings |
+| 15 | No medical claims | "Heart-friendlier", no "lowers cholesterol" |
+
+## v2 changes
+- Added `**Serves:** 3` line to the example; Defaults: "Always state the number of servings on its own line"
+- Removed tagline "Your heart also happy" from the example
+- Role: "Use Singlish naturally but vary it… don't repeat catchphrases"
+- Rule: "Only add '(Lighter Version)' to the title when you changed a classic recipe"
+
+## Scorecard (same scoring script for both)
+Files: `results/v1_grandma_15queries.json`, `results/v2_grandma_15queries.json`
+
+| Metric | v1 | v2 | Target | Verdict |
+|---|---|---|---|---|
+| Servings stated (13 recipes) | 1/13 | 13/13 | 13/13 | ✅ Fixed |
+| Tagline "heart also happy" | 5/15 | 0/15 | 0 | ✅ Fixed |
+| "Aiyo" anywhere | 10/15 | 8/15 | ≤ 4 | ❌ |
+| "(Lighter Version)" in title | 12/13 | 12/13 | adapted classics only | ❌ |
+| Query 2 copies the example | No | Yes | No | ❌ intermittent |
+| Explicit-rule tests (4–7, 9, 11–15) | 11/11 | 11/11 | no regressions | ✅ |
+
+## Lessons
+1. **Examples beat rules.** Servings and tagline were fixed by changing the *example*, not by adding rules.
+2. **Rules interact.** "(Lighter Version) only when adapted" can never trigger because another rule makes every recipe cholesterol-friendly — the model is obeying, the spec is contradictory.
+3. **Soft style instructions are weak.** "Vary it" barely moved "Aiyo" (10 → 8). A concrete rule ("Never start a reply with 'Aiyo'") would be the next test.
+4. **One run is not evidence.** Query 2 copied the example in 2 of 3 runs. Re-running the identical v2 prompt varied by about ±1 per metric on 15 queries — that's the noise floor; smaller "improvements" aren't real.
+5. **Confirm what you ran.** A first v2 run started before the prompt was fully saved and wrongly showed the tagline fix failing. A clean rerun showed it worked. Contaminated runs lead to wrong conclusions.
+
+## Open items
+- Decide expected behaviour for non-Singaporean requests (query 10).
+- Resolve the "Lighter Version" vs "always healthy" conflict.
+- Hard rule for "Aiyo" openers; multiple examples to reduce copying.
